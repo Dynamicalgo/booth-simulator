@@ -33,7 +33,7 @@ html, body, #root {
 
 .sidebar h2 {
   font-size: 18px;
-  color: #e94560;
+  color: #f5c518;
   padding-bottom: 8px;
   border-bottom: 1px solid #0f3460;
 }
@@ -81,7 +81,7 @@ html, body, #root {
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: #e94560;
+  color: #f5c518;
   margin-bottom: 4px;
 }
 
@@ -96,7 +96,7 @@ html, body, #root {
 
 .panel input[type="range"] {
   width: 100%;
-  accent-color: #e94560;
+  accent-color: #f5c518;
 }
 
 /* Checkbox group */
@@ -114,7 +114,7 @@ html, body, #root {
 }
 
 .checkbox-group input[type="checkbox"] {
-  accent-color: #e94560;
+  accent-color: #f5c518;
 }
 
 /* Color pickers */
@@ -166,36 +166,39 @@ html, body, #root {
 }
 
 .btn-active {
-  background: #e94560;
-  border-color: #e94560;
-  color: #fff;
+  background: #f5c518;
+  border-color: #f5c518;
+  color: #1a1a2e;
 }
 
 .btn-active:hover {
-  background: #d63a55;
+  background: #d4a910;
+  color: #1a1a2e;
 }
 
 .btn-primary {
-  background: #e94560;
-  border-color: #e94560;
-  color: #fff;
+  background: #f5c518;
+  border-color: #f5c518;
+  color: #1a1a2e;
+  font-weight: 600;
   width: 100%;
 }
 
 .btn-primary:hover {
-  background: #d63a55;
+  background: #d4a910;
+  color: #1a1a2e;
 }
 
 .btn-danger {
   background: transparent;
-  border-color: #e94560;
-  color: #e94560;
+  border-color: #f5c518;
+  color: #f5c518;
   padding: 4px 8px;
   font-size: 12px;
 }
 
 .btn-danger:hover {
-  background: #e94560;
+  background: #f5c518;
   color: #fff;
 }
 
@@ -225,7 +228,7 @@ html, body, #root {
 
 .object-item.selected {
   background: #233a6b;
-  border: 1px solid #e94560;
+  border: 1px solid #f5c518;
 }
 
 .object-name {
@@ -238,7 +241,7 @@ html, body, #root {
 }
 
 .object-name:hover {
-  color: #e94560;
+  color: #f5c518;
 }
 
 .hint {
