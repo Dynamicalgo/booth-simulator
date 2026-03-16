@@ -15,7 +15,7 @@ function App() {
 
   // Load default booth on mount
   useEffect(() => {
-    fetch('/default-booth.html')
+    fetch(import.meta.env.BASE_URL + 'default-booth.html')
       .then((r) => r.text())
       .then((html) => setHtmlSource(html))
       .catch((err) => console.error('Failed to load default booth:', err))
