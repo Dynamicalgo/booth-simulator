@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Univers Briefing Room - Curved Concept</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #4a4a52;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #ffffff;
+            pointer-events: none;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            background: rgba(20, 25, 35, 0.85);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 170, 255, 0.3);
+            backdrop-filter: blur(8px);
+            max-width: 350px;
+        }
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: #00aaff;
+        }
+        p {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #E2E8F0;
+        }
+        .controls {
+            font-size: 11px;
+            color: #A0AEC0;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>
+    <!-- Load Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div id="loading">Loading Seamless Concept...</div>
+
+    <script>
+        window.onload = function() {
+            document.getElementById('loading').style.display = 'none';
+            init3D();
+        };
+
+        function init3D() {
+            // --- 1. SETUP ---
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x4a4a52);
+            scene.fog = new THREE.FogExp2(0x4a4a52, 0.04);
+
+            const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 1.8, 5.0);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.1;
+            document.body.appendChild(renderer.domElement);
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 - 0.01;
+            controls.minDistance = 2;
+            controls.maxDistance = 12;
+            controls.target.set(0, 1.2, -0.5);
+
+            // --- 2. LIGHTING ---
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
+
+            const fillLight = new THREE.SpotLight(0xfff5e6, 2.0);
+            fillLight.position.set(0, 5, 3);
+            fillLight.angle = Math.PI / 3;
+            fillLight.penumbra = 0.8;
+            scene.add(fillLight);
+
+            const warmLight = new THREE.PointLight(0xffcc88, 1.0, 5);
+            warmLight.position.set(0, 1, 1);
+            scene.add(warmLight);
+
+            // --- 3. MATERIALS ---
+            const darkMat = new THREE.MeshStandardMaterial({ color: 0x12151c, roughness: 0.4, metalness: 0.3 });
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0xab865e, roughness: 0.3, metalness: 0.1 });
+            const neonMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x00aaff, emissiveIntensity: 2.0 });
+            const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf0f0f0, roughness: 0.2 });
+            const blackFloorMat = new THREE.MeshStandardMaterial({ color: 0x080a0f, roughness: 0.3, metalness: 0.2 });
+
+            const booth = new THREE.Group();
+            scene.add(booth);
+
+            // --- 4. FLOOR ---
+            const floorGeo = new THREE.BoxGeometry(4, 0.1, 3);
+            const floor = new THREE.Mesh(floorGeo, blackFloorMat);
+            floor.position.set(0, 0, 0);
+            floor.receiveShadow = true;
+            booth.add(floor);
+
+            const glowFloorGeo = new THREE.BoxGeometry(4.06, 0.05, 3.06);
+            const glowFloor = new THREE.Mesh(glowFloorGeo, neonMat);
+            glowFloor.position.set(0, -0.05, 0);
+            booth.add(glowFloor);
+
+            // --- 4b. STRUCTURAL WALLS ---
+            const leftWallGeo = new THREE.BoxGeometry(0.2, 3.2, 3);
+            const leftWall = new THREE.Mesh(leftWallGeo, darkMat);
+            leftWall.position.set(-1.9, 1.6, 0);
+            leftWall.castShadow = true;
+            leftWall.receiveShadow = true;
+            booth.add(leftWall);
+
+            const pillarGeo = new THREE.CylinderGeometry(0.08, 0.08, 3.2, 32);
+            const pillar = new THREE.Mesh(pillarGeo, darkMat);
+            pillar.position.set(1.6, 1.6, 1.0);
+            pillar.castShadow = true;
+            booth.add(pillar);
+
+            const pillarNeonGeo = new THREE.CylinderGeometry(0.085, 0.085, 2.0, 32);
+            const pillarNeon = new THREE.Mesh(pillarNeonGeo, neonMat);
+            pillarNeon.position.set(1.6, 1.6, 1.0);
+            booth.add(pillarNeon);
+
+            // --- 5. CURVED BACK WALL ---
+            const wallShape = new THREE.Shape();
+            wallShape.moveTo(-2, 0);
+            wallShape.lineTo(2, 0);
+            wallShape.lineTo(2, 3);
+            wallShape.lineTo(-2, 3);
+            wallShape.lineTo(-2, 0);
+
+            const hole = new THREE.Path();
+            const cx = 0.4;
+            const cy = 1.4;
+            const w = 1.2;
+            const r = 0.7;
+
+            hole.moveTo(cx - w/2, cy + r);
+            hole.lineTo(cx + w/2, cy + r);
+            hole.absarc(cx + w/2, cy, r, Math.PI/2, -Math.PI/2, true);
+            hole.lineTo(cx - w/2, cy - r);
+            hole.absarc(cx - w/2, cy, r, -Math.PI/2, Math.PI/2, true);
+            wallShape.holes.push(hole);
+
+            const extrudeSettings = { depth: 0.3, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 0.03, bevelThickness: 0.03 };
+            const backWallGeo = new THREE.ExtrudeGeometry(wallShape, extrudeSettings);
+            const backWall = new THREE.Mesh(backWallGeo, darkMat);
+            backWall.position.set(0, 0.05, -1.2);
+            backWall.castShadow = true;
+            backWall.receiveShadow = true;
+            booth.add(backWall);
+
+            const backingGeo = new THREE.BoxGeometry(3.5, 2.8, 0.1);
+            const backing = new THREE.Mesh(backingGeo, darkMat);
+            backing.position.set(0, 1.5, -1.25);
+            booth.add(backing);
+
+            const trimShape = new THREE.Shape();
+            trimShape.moveTo(cx - w/2, cy + r - 0.05);
+            trimShape.lineTo(cx + w/2, cy + r - 0.05);
+            trimShape.absarc(cx + w/2, cy, r - 0.05, Math.PI/2, -Math.PI/2, true);
+            trimShape.lineTo(cx - w/2, cy - r + 0.05);
+            trimShape.absarc(cx - w/2, cy, r - 0.05, -Math.PI/2, Math.PI/2, true);
+
+            const trimHole = new THREE.Path();
+            trimHole.moveTo(cx - w/2, cy + r - 0.1);
+            trimHole.lineTo(cx + w/2, cy + r - 0.1);
+            trimHole.absarc(cx + w/2, cy, r - 0.1, Math.PI/2, -Math.PI/2, true);
+            trimHole.lineTo(cx - w/2, cy - r + 0.1);
+            trimHole.absarc(cx - w/2, cy, r - 0.1, -Math.PI/2, Math.PI/2, true);
+            trimShape.holes.push(trimHole);
+
+            const trimGeo = new THREE.ExtrudeGeometry(trimShape, { depth: 0.25, bevelEnabled: false });
+            const trim = new THREE.Mesh(trimGeo, neonMat);
+            trim.position.set(0, 0.05, -1.18);
+            booth.add(trim);
+
+            // --- 6. HERO SCREEN ---
+            const screenWidth = 1.8;
+            const screenHeight = 1.0;
+            const screenGeo = new THREE.PlaneGeometry(screenWidth, screenHeight);
+
+            const screenMaterial = new THREE.MeshStandardMaterial({
+                color: 0x020202, emissive: 0x000000, roughness: 0.05, metalness: 0.9
+            });
+
+            const heroScreen = new THREE.Mesh(screenGeo, screenMaterial);
+            heroScreen.position.set(cx, cy + 0.05, -1.19);
+            booth.add(heroScreen);
+
+            // --- 7. STRUCTURALLY SOUND CANOPY ---
+            const canopyGroup = new THREE.Group();
+            canopyGroup.position.set(0, 3.2, 0);
+            canopyGroup.rotation.x = Math.PI / 2;
+            canopyGroup.scale.set(1.2, 1.0, 1);
+            booth.add(canopyGroup);
+
+            const ring1 = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.15, 16, 64), darkMat);
+            canopyGroup.add(ring1);
+            const ring2 = new THREE.Mesh(new THREE.TorusGeometry(2.0, 0.15, 16, 64, Math.PI*1.5), whiteMat);
+            ring2.position.z = 0.1;
+            canopyGroup.add(ring2);
+            const ring3 = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.08, 16, 64), neonMat);
+            ring3.position.z = 0.2;
+            canopyGroup.add(ring3);
+
+            // --- 8. CURVED HOST PODIUM ---
+            const podiumGroup = new THREE.Group();
+            podiumGroup.position.set(1.0, 0.05, 0.6);
+            podiumGroup.rotation.y = -Math.PI / 6;
+            booth.add(podiumGroup);
+
+            const podiumBaseGeo = new THREE.CylinderGeometry(0.5, 0.5, 1.0, 64);
+            const podiumBase = new THREE.Mesh(podiumBaseGeo, darkMat);
+            podiumBase.scale.z = 0.5;
+            podiumBase.position.y = 0.5;
+            podiumBase.castShadow = true;
+            podiumGroup.add(podiumBase);
+
+            const podiumTopGeo = new THREE.CylinderGeometry(0.55, 0.55, 0.05, 64);
+            const podiumTop = new THREE.Mesh(podiumTopGeo, woodMat);
+            podiumTop.scale.z = 0.5;
+            podiumTop.position.y = 1.025;
+            podiumGroup.add(podiumTop);
+
+            const podiumNeonGeo = new THREE.CylinderGeometry(0.52, 0.52, 0.03, 64);
+            const podiumNeon = new THREE.Mesh(podiumNeonGeo, neonMat);
+            podiumNeon.scale.z = 0.5;
+            podiumNeon.position.y = 0.98;
+            podiumGroup.add(podiumNeon);
+
+            // --- 9. UNIVERS ORBS ---
+            const orbsGroup = new THREE.Group();
+            booth.add(orbsGroup);
+
+            const orbMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff, emissive: 0x00aaff, emissiveIntensity: 1.5, roughness: 0.2
+            });
+
+            const nodePositions = [
+                new THREE.Vector3(-0.4, 2.25, -0.85),
+                new THREE.Vector3(0.1, 2.55, -0.85),
+                new THREE.Vector3(0.6, 2.35, -0.85),
+                new THREE.Vector3(1.2, 2.45, -0.85)
+            ];
+
+            const orbs = [];
+            nodePositions.forEach(pos => {
+                const orb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), orbMaterial);
+                orb.position.copy(pos);
+                orbsGroup.add(orb);
+                orbs.push({ mesh: orb, basePos: pos, offset: Math.random() * Math.PI * 2 });
+
+                const orbLight = new THREE.PointLight(0x00aaff, 0.8, 1);
+                orbLight.position.copy(pos);
+                orbsGroup.add(orbLight);
+            });
+
+            const lineMat = new THREE.LineBasicMaterial({ color: 0x00aaff, transparent: true, opacity: 0.4 });
+            const points = [nodePositions[0], nodePositions[1], nodePositions[2], nodePositions[3], nodePositions[1]];
+            const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+            orbsGroup.add(new THREE.Line(lineGeo, lineMat));
+
+            // --- 10. PREMIUM SEAMLESS STORAGE ---
+            const storageGroup = new THREE.Group();
+            booth.add(storageGroup);
+
+            const sRightGeo = new THREE.BoxGeometry(0.05, 3.0, 0.6);
+            const sRight = new THREE.Mesh(sRightGeo, darkMat);
+            sRight.position.set(-1.06, 1.55, -0.9);
+            storageGroup.add(sRight);
+
+            const sTopGeo = new THREE.BoxGeometry(0.85, 0.05, 0.6);
+            const sTop = new THREE.Mesh(sTopGeo, darkMat);
+            sTop.position.set(-1.45, 3.05, -0.9);
+            storageGroup.add(sTop);
+
+            const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.05, 0.4), woodMat);
+            shelf.position.set(-1.4, 1.0, -0.9);
+            storageGroup.add(shelf);
+
+            const promoBox = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.15, 0.2), whiteMat);
+            promoBox.position.set(-1.45, 1.1, -0.9);
+            storageGroup.add(promoBox);
+
+            const bottleMat = new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.1, transparent: true, opacity: 0.8 });
+            const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.15, 16), bottleMat);
+            bottle.position.set(-1.25, 1.1, -0.85);
+            storageGroup.add(bottle);
+
+            const closetLight = new THREE.PointLight(0xffeedd, 0.8, 2);
+            closetLight.position.set(-1.4, 2.5, -0.9);
+            storageGroup.add(closetLight);
+
+            const slatGeo = new THREE.BoxGeometry(0.04, 3.0, 0.02);
+            const slatBackingGeo = new THREE.BoxGeometry(0.08, 3.0, 0.02);
+
+            const hingeX = -1.09;
+            const doorGroup = new THREE.Group();
+            doorGroup.position.set(hingeX, 0, -0.6);
+            storageGroup.add(doorGroup);
+
+            for(let i = 0; i < 10; i++) {
+                let globalX = -1.85 + (i * 0.08);
+
+                if(i < 3) {
+                    let slat = new THREE.Mesh(slatGeo, woodMat);
+                    slat.position.set(globalX, 1.55, -0.6);
+                    slat.castShadow = true;
+                    storageGroup.add(slat);
+
+                    let backing = new THREE.Mesh(slatBackingGeo, darkMat);
+                    backing.position.set(globalX, 1.55, -0.62);
+                    storageGroup.add(backing);
+                } else {
+                    let localX = globalX - hingeX;
+                    let slat = new THREE.Mesh(slatGeo, woodMat);
+                    slat.position.set(localX, 1.55, 0);
+                    slat.castShadow = true;
+                    doorGroup.add(slat);
+
+                    let backing = new THREE.Mesh(slatBackingGeo, darkMat);
+                    backing.position.set(localX, 1.55, -0.02);
+                    doorGroup.add(backing);
+                }
+            }
+
+            // --- 11. LEFT WALL POSTERS & ORBS ---
+            const leftWallFeatureGroup = new THREE.Group();
+            booth.add(leftWallFeatureGroup);
+
+            const posterGeo = new THREE.PlaneGeometry(0.5, 1.1);
+            const posterMat = new THREE.MeshStandardMaterial({ color: 0x080a0f, roughness: 0.2, metalness: 0.8 });
+            const posterBorderGeo = new THREE.PlaneGeometry(0.54, 1.14);
+            const posterBorderMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x00aaff, emissiveIntensity: 0.6 });
+
+            const posterZPositions = [-0.1, 0.55, 1.2];
+
+            posterZPositions.forEach(zPos => {
+                const border = new THREE.Mesh(posterBorderGeo, posterBorderMat);
+                border.position.set(-1.79, 1.6, zPos);
+                border.rotation.y = Math.PI / 2;
+                leftWallFeatureGroup.add(border);
+
+                const poster = new THREE.Mesh(posterGeo, posterMat);
+                poster.position.set(-1.78, 1.6, zPos);
+                poster.rotation.y = Math.PI / 2;
+                leftWallFeatureGroup.add(poster);
+            });
+
+            const leftNodePositions = [
+                new THREE.Vector3(-1.75, 2.45, -0.4),
+                new THREE.Vector3(-1.75, 2.45, 0.22),
+                new THREE.Vector3(-1.75, 0.75, 0.22),
+                new THREE.Vector3(-1.75, 0.75, 0.87),
+                new THREE.Vector3(-1.75, 2.45, 0.87),
+                new THREE.Vector3(-1.75, 2.45, 1.4)
+            ];
+
+            leftNodePositions.forEach(pos => {
+                const orb = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 16), orbMaterial);
+                orb.position.copy(pos);
+                leftWallFeatureGroup.add(orb);
+                orbs.push({ mesh: orb, basePos: pos, offset: Math.random() * Math.PI * 2 });
+
+                const orbLight = new THREE.PointLight(0x00aaff, 0.6, 1.5);
+                orbLight.position.copy(pos);
+                leftWallFeatureGroup.add(orbLight);
+            });
+
+            const leftLinePoints = [
+                leftNodePositions[0], leftNodePositions[1], leftNodePositions[2],
+                leftNodePositions[3], leftNodePositions[4], leftNodePositions[5]
+            ];
+            const leftLineGeo = new THREE.BufferGeometry().setFromPoints(leftLinePoints);
+            leftWallFeatureGroup.add(new THREE.Line(leftLineGeo, lineMat));
+
+            // --- RESIZE & ANIMATION ---
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            const clock = new THREE.Clock();
+
+            function animate() {
+                requestAnimationFrame(animate);
+                const time = clock.getElapsedTime();
+                controls.update();
+
+                let swingCycle = Math.sin(time * 0.8);
+
+                if (swingCycle < 0) {
+                    doorGroup.rotation.y = 0;
+                } else {
+                    doorGroup.rotation.y = Math.pow(swingCycle, 2) * 1.5;
+                }
+
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+    </script>
+</body>
+</html>
