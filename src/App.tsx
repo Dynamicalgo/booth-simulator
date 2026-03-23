@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { Sidebar } from './components/ui/Sidebar'
 import { useBoothStore } from './store/useBoothStore'
 import { injectEditorIntoHtml } from './utils/injectEditor'
@@ -92,15 +92,39 @@ function App() {
   }, [setEditorReady, onObjectAdded, updateObjectTransform])
 
   const injectedHtml = htmlSource ? injectEditorIntoHtml(htmlSource) : null
+  const blobUrlRef = useRef<string | null>(null)
+
+  // Create a blob URL from the injected HTML so the iframe has a real origin
+  // (supports import maps, ES modules, etc.)
+  useEffect(() => {
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current)
+      blobUrlRef.current = null
+    }
+    if (injectedHtml) {
+      const blob = new Blob([injectedHtml], { type: 'text/html' })
+      blobUrlRef.current = URL.createObjectURL(blob)
+    }
+    // Force re-render by updating a state
+    setIframeSrc(blobUrlRef.current)
+    return () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current)
+        blobUrlRef.current = null
+      }
+    }
+  }, [injectedHtml])
+
+  const [iframeSrc, setIframeSrc] = useState<string | null>(null)
 
   return (
     <div className="app">
       <Sidebar />
       <div className="viewport">
-        {injectedHtml ? (
+        {iframeSrc ? (
           <iframe
             ref={iframeRef}
-            srcDoc={injectedHtml}
+            src={iframeSrc}
             onLoad={handleIframeLoad}
             title="Booth Viewer"
             style={{ width: '100%', height: '100%', border: 'none' }}
