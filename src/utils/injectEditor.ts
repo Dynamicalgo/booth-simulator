@@ -381,8 +381,8 @@ function getEditorScript(): string {
           var captureW = data.width || 1920;
           var captureH = data.height || 1080;
           if (tc) tc.visible = false;
-          var origW = renderer.domElement.width;
-          var origH = renderer.domElement.height;
+          var origW = renderer.domElement.clientWidth || window.innerWidth;
+          var origH = renderer.domElement.clientHeight || window.innerHeight;
           var origAspect = camera.aspect;
           renderer.setSize(captureW, captureH);
           camera.aspect = captureW / captureH;
