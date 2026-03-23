@@ -17,61 +17,6 @@
             height: 100vh;
             display: block;
         }
-        #brand-header {
-            position: absolute;
-            top: 30px;
-            left: 30px;
-            font-size: 24px;
-            font-weight: bold;
-            letter-spacing: 2px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 10;
-        }
-        .logo-orb {
-            width: 20px;
-            height: 20px;
-            background: #1033CF;
-            border-radius: 50%;
-            box-shadow: 0 0 15px #1033CF;
-        }
-        #instructions {
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            font-size: 12px;
-            color: #555555;
-            text-align: right;
-            pointer-events: none;
-            z-index: 10;
-        }
-        #state-indicator {
-            position: absolute;
-            bottom: 30px;
-            left: 30px;
-            font-size: 11px;
-            letter-spacing: 2px;
-            color: #444444;
-            text-transform: uppercase;
-        }
-        .state-dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #333;
-            margin-right: 8px;
-            transition: all 0.5s ease;
-        }
-        .state-dot.active {
-            background: #E5562C;
-            box-shadow: 0 0 10px #E5562C;
-        }
-        .state-dot.active.sync {
-            background: #1033CF;
-            box-shadow: 0 0 10px #1033CF;
-        }
     </style>
     <script type="importmap">
         {
@@ -83,24 +28,6 @@
     </script>
 </head>
 <body>
-
-    <div id="brand-header">
-        <div class="logo-orb" id="ui-logo"></div>
-        UNIVERS
-    </div>
-
-    <div id="state-indicator">
-        <span class="state-dot active" id="dot-0"></span> PROBLEM STATE <br><br>
-        <span class="state-dot" id="dot-1"></span> SYSTEM SHIFT <br><br>
-        <span class="state-dot" id="dot-2"></span> OUTCOME SYNCHRONIZED
-    </div>
-
-    <div id="instructions">
-        <b>Click the Black Console to Control Demo</b><br><br>
-        Left Click + Drag to Rotate<br>
-        Right Click + Drag to Pan<br>
-        Scroll to Zoom
-    </div>
 
     <div id="canvas-container"></div>
 
@@ -557,21 +484,6 @@
         const colorSync = new THREE.Color(0x1033CF);
 
         function updateUI(state) {
-            document.querySelectorAll('.state-dot').forEach(d => {
-                d.classList.remove('active'); d.classList.remove('sync');
-            });
-            const dot = document.getElementById(`dot-${state}`);
-            if(dot) {
-                dot.classList.add('active');
-                if(state === 2) dot.classList.add('sync');
-            }
-
-            const uiLogo = document.getElementById('ui-logo');
-            if(state === 0) { uiLogo.style.background = '#E5562C'; uiLogo.style.boxShadow = '0 0 15px #E5562C'; }
-            else if(state === 1) { uiLogo.style.background = '#888'; uiLogo.style.boxShadow = 'none'; }
-            else { uiLogo.style.background = '#1033CF'; uiLogo.style.boxShadow = '0 0 15px #1033CF'; }
-
-            // Render the touch panel UI
             drawTouchPanel(state);
         }
 
@@ -657,6 +569,13 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
+        // Expose globals for the booth editor
+        window.THREE = THREE;
+        window.scene = scene;
+        window.camera = camera;
+        window.renderer = renderer;
+        window.controls = controls;
 
         updateUI(0);
         animate();

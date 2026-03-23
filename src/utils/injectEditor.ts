@@ -157,27 +157,84 @@ function getEditorScript(): string {
     });
   }
 
+  function isESMVersion() {
+    var rev = parseInt(THREE.REVISION, 10);
+    return rev >= 150;
+  }
+
+  window.__editorModules = {};
+
+  function loadESM(modulePaths) {
+    // For ES module Three.js (r150+), we create a <script type="module"> that
+    // imports the needed addons and stores them on window.__editorModules
+    // (THREE is a frozen ES module object, can't assign to it directly).
+    return new Promise(function(resolve, reject) {
+      var ver = THREE.REVISION || "160";
+      var base = "https://cdn.jsdelivr.net/npm/three@0." + ver + ".0/examples/jsm/";
+      var imports = [];
+      var assigns = [];
+      modulePaths.forEach(function(item) {
+        imports.push("import { " + item.name + " } from '" + base + item.path + "';");
+        assigns.push("window.__editorModules." + item.name + " = " + item.name + ";");
+      });
+      var code = imports.join("\\n") + "\\n" + assigns.join("\\n") + "\\nwindow.dispatchEvent(new Event('__editorModulesLoaded'));";
+      var s = document.createElement("script");
+      s.type = "module";
+      s.textContent = code;
+      window.addEventListener("__editorModulesLoaded", function handler() {
+        window.removeEventListener("__editorModulesLoaded", handler);
+        resolve();
+      });
+      s.onerror = function() { reject(new Error("Failed to load ES modules")); };
+      document.head.appendChild(s);
+    });
+  }
+
   waitForGlobals(function() {
     var version = THREE.REVISION || "128";
-    var loaders = [];
     var hasCamera = typeof camera !== "undefined" && camera !== null;
     var hasRenderer = typeof renderer !== "undefined" && renderer !== null;
     var canUseGizmos = hasCamera && hasRenderer;
 
-    if (canUseGizmos && !THREE.TransformControls) {
-      loaders.push(loadScript("https://cdn.jsdelivr.net/npm/three@0." + version + ".0/examples/js/controls/TransformControls.js"));
+    if (isESMVersion()) {
+      // r150+ only has ES modules — load all needed addons in one module script
+      var modules = [];
+      if (canUseGizmos && !THREE.TransformControls) {
+        modules.push({ name: "TransformControls", path: "controls/TransformControls.js" });
+      }
+      if (!THREE.GLTFLoader) {
+        modules.push({ name: "GLTFLoader", path: "loaders/GLTFLoader.js" });
+      }
+      if (modules.length > 0) {
+        loadESM(modules).then(function() { initEditor(canUseGizmos); }).catch(function(err) {
+          console.error("Booth Editor: Failed to load ES modules:", err);
+          window.parent.postMessage({ type: "EDITOR_ERROR", message: String(err) }, "*");
+        });
+      } else {
+        initEditor(canUseGizmos);
+      }
+    } else {
+      // r149 and below have classic script builds
+      var loaders = [];
+      if (canUseGizmos && !THREE.TransformControls) {
+        loaders.push(loadScript("https://cdn.jsdelivr.net/npm/three@0." + version + ".0/examples/js/controls/TransformControls.js"));
+      }
+      if (!THREE.GLTFLoader) {
+        loaders.push(loadScript("https://cdn.jsdelivr.net/npm/three@0." + version + ".0/examples/js/loaders/GLTFLoader.js"));
+      }
+      Promise.all(loaders).then(function() { initEditor(canUseGizmos); }).catch(function(err) {
+        console.error("Booth Editor: Failed to load required modules:", err);
+        window.parent.postMessage({ type: "EDITOR_ERROR", message: String(err) }, "*");
+      });
     }
-    if (!THREE.GLTFLoader) {
-      loaders.push(loadScript("https://cdn.jsdelivr.net/npm/three@0." + version + ".0/examples/js/loaders/GLTFLoader.js"));
-    }
-
-    Promise.all(loaders).then(function() { initEditor(canUseGizmos); }).catch(function(err) {
-      console.error("Booth Editor: Failed to load required modules:", err);
-      window.parent.postMessage({ type: "EDITOR_ERROR", message: String(err) }, "*");
-    });
   });
 
   function initEditor(canUseGizmos) {
+    var em = window.__editorModules || {};
+    var TransformControlsCtor = em.TransformControls || THREE.TransformControls;
+    var GLTFLoaderCtor = em.GLTFLoader || THREE.GLTFLoader;
+    var GLTFExporterCtor = em.GLTFExporter || THREE.GLTFExporter;
+
     var editorObjects = {};
     var selectedId = null;
     var currentTransformMode = "translate";
@@ -185,9 +242,9 @@ function getEditorScript(): string {
     var tc = null;
 
     // --- TransformControls (only if camera + renderer available) ---
-    if (canUseGizmos && THREE.TransformControls) {
+    if (canUseGizmos && TransformControlsCtor) {
       var _justDragged = false;
-      tc = new THREE.TransformControls(camera, renderer.domElement);
+      tc = new TransformControlsCtor(camera, renderer.domElement);
       tc.addEventListener("dragging-changed", function(event) {
         if (typeof controls !== "undefined") controls.enabled = !event.value;
         if (!event.value && tc.object) {
@@ -248,7 +305,7 @@ function getEditorScript(): string {
     }
 
     // --- GLTFLoader ---
-    var gltfLoader = new THREE.GLTFLoader();
+    var gltfLoader = new GLTFLoaderCtor();
 
     function doSelect(id) {
       selectedId = id;
@@ -346,8 +403,9 @@ function getEditorScript(): string {
 
           function doGltfExport() {
             try {
+              var ExporterCtor = (window.__editorModules && window.__editorModules.GLTFExporter) || THREE.GLTFExporter;
               if (tc) tc.visible = false;
-              var exporter = new THREE.GLTFExporter();
+              var exporter = new ExporterCtor();
               exporter.parse(scene, function(result) {
                 if (tc) tc.visible = true;
                 var json = JSON.stringify(result);
@@ -359,13 +417,21 @@ function getEditorScript(): string {
             }
           }
 
-          if (THREE.GLTFExporter) {
+          var hasExporter = (window.__editorModules && window.__editorModules.GLTFExporter) || THREE.GLTFExporter;
+          if (hasExporter) {
             doGltfExport();
           } else {
             window.parent.postMessage({ type: "EXPORT_GLB_LOADING" }, "*");
-            loadScript("https://cdn.jsdelivr.net/npm/three@0." + ver + ".0/examples/js/exporters/GLTFExporter.js")
+            var loadExporter;
+            if (isESMVersion()) {
+              loadExporter = loadESM([{ name: "GLTFExporter", path: "exporters/GLTFExporter.js" }]);
+            } else {
+              loadExporter = loadScript("https://cdn.jsdelivr.net/npm/three@0." + ver + ".0/examples/js/exporters/GLTFExporter.js");
+            }
+            loadExporter
               .then(function() {
-                if (THREE.GLTFExporter) {
+                var loaded = (window.__editorModules && window.__editorModules.GLTFExporter) || THREE.GLTFExporter;
+                if (loaded) {
                   doGltfExport();
                 } else {
                   window.parent.postMessage({ type: "EXPORT_GLB_ERROR", message: "GLTFExporter not found after loading script" }, "*");
